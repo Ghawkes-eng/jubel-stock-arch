@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jubel Arch — Stock Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #E8B84B;
+    --gold-light: #F5D07A;
+    --gold-dark: #B8892A;
+    --bg: #0D0D0D;
+    --surface: #161616;
+    --surface2: #1E1E1E;
+    --border: #2A2A2A;
+    --text: #F0EDE6;
+    --text-muted: #888;
+    --peach: #FF8C61;
+    --grape: #C78FE0;
+    --mango: #FFD050;
+    --keg: #7BC8A4;
+    --danger: #FF5A5A;
+    --success: #4CAF82;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 3px;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .logo span {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    letter-spacing: 2px;
+    display: block;
+    margin-top: 1px;
+  }
+
+  .sync-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+
+  .sync-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--success);
+    animation: pulse 2s infinite;
+  }
+
+  .sync-dot.syncing { background: var(--gold); animation: spin-pulse 1s infinite; }
+  .sync-dot.error { background: var(--danger); animation: none; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+
+  .tab {
+    padding: 12px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+
+  .tab.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+
+  /* MAIN CONTENT */
+  main { padding: 20px; max-width: 600px; margin: 0 auto; }
+
+  /* SETUP PANEL */
+  .setup-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .setup-panel h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+
+  .setup-panel p {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  .field-group { margin-bottom: 14px; }
+
+  label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  input[type="text"], input[type="number"], select {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    transition: border-color 0.2s;
+    -webkit-appearance: none;
+  }
+
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--gold);
+  }
+
+  /* BUTTON */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+
+  .btn-primary {
+    background: var(--gold);
+    color: #000;
+    width: 100%;
+  }
+
+  .btn-primary:hover { background: var(--gold-light); }
+  .btn-primary:active { transform: scale(0.98); }
+
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 12px;
+    padding: 8px 14px;
+  }
+
+  .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+
+  .btn-danger {
+    background: transparent;
+    border: 1px solid #FF5A5A44;
+    color: var(--danger);
+    font-size: 12px;
+    padding: 8px 14px;
+  }
+
+  /* SKU CARDS */
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    margin: 24px 0 12px;
+    text-transform: uppercase;
+  }
+
+  .sku-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 10px;
+    transition: border-color 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sku-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    border-radius: 12px 0 0 12px;
+  }
+
+  .sku-card.peach::before { background: var(--peach); }
+  .sku-card.grape::before { background: var(--grape); }
+  .sku-card.mango::before { background: var(--mango); }
+  .sku-card.keg::before { background: var(--keg); }
+
+  .sku-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .sku-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.2px;
+  }
+
+  .sku-emoji { font-size: 16px; margin-right: 8px; }
+
+  .sku-badge {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+  }
+
+  .badge-peach { background: #FF8C6122; color: var(--peach); }
+  .badge-grape { background: #C78FE022; color: var(--grape); }
+  .badge-mango { background: #FFD05022; color: var(--mango); }
+  .badge-keg { background: #7BC8A422; color: var(--keg); }
+
+  .stock-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .stock-cell {
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+
+  .stock-cell .label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 3px;
+    display: block;
+  }
+
+  .stock-cell .value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 1px;
+  }
+
+  .stock-cell .value.low { color: var(--danger); }
+  .stock-cell .value.medium { color: var(--gold); }
+
+  .take-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .qty-control {
+    display: flex;
+    align-items: center;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .qty-btn {
+    width: 38px;
+    height: 38px;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+
+  .qty-btn:hover { background: var(--border); }
+  .qty-btn:active { background: var(--surface2); }
+
+  .qty-input {
+    flex: 1;
+    background: none;
+    border: none;
+    text-align: center;
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 600;
+    padding: 0;
+    min-width: 0;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .take-btn {
+    background: var(--gold);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 0 18px;
+    height: 38px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .take-btn:hover { background: var(--gold-light); }
+  .take-btn:active { transform: scale(0.97); }
+  .take-btn:disabled { background: var(--border); color: var(--text-muted); cursor: not-allowed; }
+
+  /* LIVE STOCK CELL */
+  .live-stock-cell {
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .live-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .live-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 2px;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .live-value.low { color: var(--danger); }
+  .live-value.medium { color: var(--gold); }
+  .mode-toggle {
+    display: flex;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+    margin-bottom: 10px;
+    gap: 3px;
+  }
+
+  .mode-btn {
+    flex: 1;
+    padding: 7px 10px;
+    border-radius: 6px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.3px;
+  }
+
+  .mode-btn.active {
+    background: var(--surface2);
+    color: var(--text);
+  }
+
+  .mode-btn.active.add-mode {
+    background: #0D2A1A;
+    color: var(--success);
+  }
+
+  .take-btn.add-mode {
+    background: var(--success);
+    color: #000;
+  }
+
+  .take-btn.add-mode:hover { background: #5DD99A; }
+
+  /* NAME INPUT */
+  .name-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .name-bar .icon { font-size: 18px; }
+  .name-bar input {
+    flex: 1;
+    background: none;
+    border: none;
+    padding: 0;
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  /* HISTORY TAB */
+  .log-entry {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .log-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+
+  .log-info { flex: 1; min-width: 0; }
+
+  .log-sku {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+
+  .log-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .log-qty {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: var(--danger);
+    flex-shrink: 0;
+  }
+
+  .log-qty.added { color: var(--success); }
+
+  /* ADMIN TAB */
+  .opening-grid {
+    display: grid;
+    gap: 10px;
+  }
+
+  .opening-row {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .opening-sku { flex: 1; font-size: 13px; font-weight: 500; }
+
+  .opening-input {
+    width: 80px;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 6px 10px;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 1000;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: #4CAF8244; color: var(--success); }
+  .toast.error { border-color: #FF5A5A44; color: var(--danger); }
+  .toast.info { border-color: var(--gold-dark); color: var(--gold); }
+
+  /* SHEETS CONFIG */
+  .config-card {
+    background: linear-gradient(135deg, #1A1A00, var(--surface));
+    border: 1px solid var(--gold-dark);
+    border-radius: 12px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+
+  .config-card h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 16px;
+    letter-spacing: 2px;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+
+  .config-card p { font-size: 12px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.6; }
+
+  .sheets-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    text-decoration: none;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    transition: border-color 0.2s;
+    margin-top: 10px;
+  }
+
+  .sheets-link:hover { border-color: var(--gold); }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .empty-state .big { font-size: 36px; margin-bottom: 10px; }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 20px 0;
+  }
+
+  .row-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+
+  .info-box {
+    background: #1A1700;
+    border: 1px solid #3A3200;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: #AAA070;
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+
+  .info-box strong { color: var(--gold); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Animations */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .sku-card { animation: fadeIn 0.3s ease both; }
+  .sku-card:nth-child(1) { animation-delay: 0.05s; }
+  .sku-card:nth-child(2) { animation-delay: 0.1s; }
+  .sku-card:nth-child(3) { animation-delay: 0.15s; }
+  .sku-card:nth-child(4) { animation-delay: 0.2s; }
+  .sku-card:nth-child(5) { animation-delay: 0.25s; }
+  .sku-card:nth-child(6) { animation-delay: 0.3s; }
+  .sku-card:nth-child(7) { animation-delay: 0.35s; }
+  .sku-card:nth-child(8) { animation-delay: 0.4s; }
+
+  .flash-update {
+    animation: flashGold 0.5s ease;
+  }
+
+  @keyframes flashGold {
+    0% { background: var(--surface); }
+    40% { background: #2A2200; }
+    100% { background: var(--surface); }
+  }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    Jubel
+    <span>Arch Stock Tracker</span>
+  </div>
+  <div class="sync-status">
+    <div class="sync-dot" id="syncDot"></div>
+    <span id="syncLabel">Ready</span>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('stock')">📦 Stock</button>
+  <button class="tab" onclick="switchTab('history')">📋 History</button>
+  <button class="tab" onclick="switchTab('admin')">⚙️ Admin</button>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<main>
+
+  <!-- STOCK TAB -->
+  <div id="tab-stock" class="tab-content active">
+    <div class="name-bar">
+      <span class="icon">👤</span>
+      <input type="text" id="takerName" placeholder="Your name (required to log a take)..." />
+    </div>
+
+    <div class="section-title">🍺 330ml Cans</div>
+    <div id="cards-cans"></div>
+
+    <div class="section-title">🍺 440ml Cans</div>
+    <div id="cards-cans440"></div>
+
+    <div class="section-title">🥫 150ml Cans</div>
+    <div id="cards-small"></div>
+
+    <div class="section-title">🛢️ Kegs</div>
+    <div id="cards-kegs"></div>
+  </div>
+
+  <!-- HISTORY TAB -->
+  <div id="tab-history" class="tab-content">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <div class="section-title" style="margin:0">Recent Logs</div>
+      <button class="btn-outline btn" onclick="clearHistory()">Clear Local</button>
+    </div>
+    <div id="historyList"></div>
+  </div>
+
+  <!-- ADMIN TAB -->
+  <div id="tab-admin" class="tab-content">
+
+    <div class="config-card">
+      <h3>📊 Google Sheets Sync</h3>
+      <p>Uses <strong style="color:var(--gold)">SheetDB</strong> — a free service that connects your Google Sheet in 30 seconds. No code needed.</p>
+
+      <div class="field-group">
+        <label>SheetDB API URL</label>
+        <input type="text" id="sheetsUrl" placeholder="https://sheetdb.io/api/v1/xxxxxxxx" />
+      </div>
+      <button class="btn btn-primary" onclick="saveSheetUrl()">💾 Save & Test Connection</button>
+    </div>
+
+    <div class="info-box">
+      <strong>How to connect in 3 steps:</strong><br>
+      1. Go to <strong style="color:var(--gold)">sheetdb.io</strong> and sign in with Google<br>
+      2. Click <strong style="color:var(--gold)">Create API</strong> and select your Google Sheet<br>
+      3. Copy the API URL and paste it above<br><br>
+      Your sheet needs these column headers in row 1:<br>
+      <strong style="color:var(--gold)">Timestamp, Name, SKU, Type, Qty, Live Stock</strong>
+    </div>
+
+    <a href="https://sheetdb.io" target="_blank" class="sheets-link" style="margin-bottom:20px; display:flex">
+      <span>🔗</span> Open SheetDB to get your API URL
+    </a>
+
+    <div class="divider"></div>
+
+    <div class="section-title" style="margin-top:0">Set Live Stock</div>
+    <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">Manually set the current live stock count for any SKU — useful for stock takes or corrections.</p>
+
+    <div class="opening-grid" id="openingGrid"></div>
+
+    <button class="btn btn-primary" onclick="saveLiveStock()" style="margin-top:14px">✅ Save Live Stock</button>
+
+    <div class="divider"></div>
+
+    <div class="section-title">Danger Zone</div>
+    <button class="btn btn-danger btn" onclick="resetAll()" style="width:100%">🗑️ Reset All Stock & History</button>
+  </div>
+
+</main>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────────────
+const SKUS = [
+  { id: 'peach_330', name: 'Peach 330ml', emoji: '🍑', flavor: 'peach', type: 'cans', badge: 'Peach' },
+  { id: 'grape_330', name: 'Grapefruit 330ml', emoji: '🍊', flavor: 'grape', type: 'cans', badge: 'Grapefruit' },
+  { id: 'mango_330', name: 'Mango 330ml', emoji: '🥭', flavor: 'mango', type: 'cans', badge: 'Mango' },
+  { id: 'peach_440', name: 'Peach 440ml', emoji: '🍑', flavor: 'peach', type: 'cans440', badge: 'Peach' },
+  { id: 'grape_440', name: 'Grapefruit 440ml', emoji: '🍊', flavor: 'grape', type: 'cans440', badge: 'Grapefruit' },
+  { id: 'mango_440', name: 'Mango 440ml', emoji: '🥭', flavor: 'mango', type: 'cans440', badge: 'Mango' },
+  { id: 'peach_150', name: 'Peach 150ml', emoji: '🍑', flavor: 'peach', type: 'small', badge: 'Peach' },
+  { id: 'peach_30keg', name: 'Peach 30L Keg', emoji: '🛢️', flavor: 'peach', type: 'kegs', badge: 'Peach' },
+  { id: 'peach_50keg', name: 'Peach 50L Keg', emoji: '🛢️', flavor: 'peach', type: 'kegs', badge: 'Peach' },
+  { id: 'grape_30keg', name: 'Grapefruit 30L Keg', emoji: '🛢️', flavor: 'grape', type: 'kegs', badge: 'Grapefruit' },
+  { id: 'mango_30keg', name: 'Mango 30L Keg', emoji: '🛢️', flavor: 'mango', type: 'kegs', badge: 'Mango' },
+];
+
+const BADGE_CLASS = { peach: 'badge-peach', grape: 'badge-grape', mango: 'badge-mango' };
+const TYPE_GROUPS = { cans: 'cards-cans', cans440: 'cards-cans440', small: 'cards-small', kegs: 'cards-kegs' };
+
+let state = loadState();
+
+function loadState() {
+  const saved = localStorage.getItem('jubel_state');
+  if (saved) return JSON.parse(saved);
+  const s = { current: {}, history: [], sheetsUrl: '' };
+  SKUS.forEach(sku => { s.current[sku.id] = 0; });
+  return s;
+}
+
+function saveState() {
+  localStorage.setItem('jubel_state', JSON.stringify(state));
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────
+function render() {
+  ['cans', 'cans440', 'small', 'kegs'].forEach(type => {
+    const container = document.getElementById(TYPE_GROUPS[type]);
+    container.innerHTML = '';
+    SKUS.filter(s => s.type === type).forEach(sku => {
+      container.appendChild(buildCard(sku));
+    });
+  });
+  renderHistory();
+}
+
+function buildCard(sku) {
+  const current = state.current[sku.id] || 0;
+
+  const card = document.createElement('div');
+  card.className = `sku-card ${sku.flavor}`;
+  card.id = `card_${sku.id}`;
+  const levelClass = current <= 5 ? 'low' : current <= 15 ? 'medium' : '';
+  card.innerHTML = `
+    <div class="sku-header">
+      <div class="sku-name"><span class="sku-emoji">${sku.emoji}</span>${sku.name}</div>
+      <span class="sku-badge ${BADGE_CLASS[sku.flavor]}">${sku.badge}</span>
+    </div>
+    <div class="live-stock-cell">
+      <span class="live-label">Live Stock</span>
+      <span class="live-value ${levelClass}" id="remaining_${sku.id}">${current}</span>
+    </div>
+    <div class="mode-toggle" id="modetoggle_${sku.id}">
+      <button class="mode-btn active" id="mode-take-${sku.id}" onclick="setMode('${sku.id}','take')">Take</button>
+      <button class="mode-btn" id="mode-add-${sku.id}" onclick="setMode('${sku.id}','add')">+ Add Order</button>
+    </div>
+    <div class="take-row">
+      <div class="qty-control">
+        <button class="qty-btn" onclick="adjustQty('${sku.id}', -1)">−</button>
+        <input class="qty-input" type="number" id="qty_${sku.id}" value="1" min="1" max="9999" />
+        <button class="qty-btn" onclick="adjustQty('${sku.id}', 1)">+</button>
+      </div>
+      <button class="take-btn" id="action-btn-${sku.id}" onclick="handleAction('${sku.id}')">Take</button>
+    </div>
+  `;
+  return card;
+}
+
+function adjustQty(skuId, delta) {
+  const input = document.getElementById(`qty_${skuId}`);
+  const val = Math.max(1, parseInt(input.value || 1) + delta);
+  input.value = val;
+}
+
+// ─── MODE TOGGLE ─────────────────────────────────────────────────────
+const cardModes = {}; // skuId -> 'take' | 'add'
+
+function setMode(skuId, mode) {
+  cardModes[skuId] = mode;
+  const takBtn = document.getElementById(`mode-take-${skuId}`);
+  const addBtn = document.getElementById(`mode-add-${skuId}`);
+  const actionBtn = document.getElementById(`action-btn-${skuId}`);
+  if (mode === 'add') {
+    takBtn.classList.remove('active');
+    addBtn.classList.add('active', 'add-mode');
+    actionBtn.textContent = 'Add Stock';
+    actionBtn.className = 'take-btn add-mode';
+  } else {
+    addBtn.classList.remove('active', 'add-mode');
+    takBtn.classList.add('active');
+    actionBtn.textContent = 'Take';
+    actionBtn.className = 'take-btn';
+  }
+}
+
+function handleAction(skuId) {
+  if (cardModes[skuId] === 'add') {
+    addSku(skuId);
+  } else {
+    takeSku(skuId);
+  }
+}
+
+// ─── TAKE ACTION ─────────────────────────────────────────────────────
+async function takeSku(skuId) {
+  const name = document.getElementById('takerName').value.trim();
+  if (!name) { showToast('⚠️ Please enter your name first', 'error'); return; }
+
+  const qtyInput = document.getElementById(`qty_${skuId}`);
+  const qty = parseInt(qtyInput.value) || 1;
+  if (qty < 1) return;
+
+  const current = state.current[skuId] || 0;
+  if (qty > current) { showToast(`❌ Not enough stock (only ${current} left)`, 'error'); return; }
+
+  state.current[skuId] = current - qty;
+
+  const sku = SKUS.find(s => s.id === skuId);
+  const entry = {
+    id: Date.now(),
+    skuId,
+    skuName: sku.name,
+    qty,
+    name,
+    ts: new Date().toISOString(),
+    type: 'take'
+  };
+  state.history.unshift(entry);
+  saveState();
+
+  // Update display
+  const card = document.getElementById(`card_${skuId}`);
+  const newCurrent = state.current[skuId];
+  const levelClass = newCurrent <= 5 ? 'low' : newCurrent <= 15 ? 'medium' : '';
+  document.getElementById(`remaining_${skuId}`).textContent = newCurrent;
+  document.getElementById(`remaining_${skuId}`).className = `live-value ${levelClass}`;
+  qtyInput.value = 1;
+
+  card.classList.remove('flash-update');
+  void card.offsetWidth;
+  card.classList.add('flash-update');
+
+  showToast(`✅ ${qty}× ${sku.name} taken`, 'success');
+  renderHistory();
+
+  // Sync to Google Sheets
+  if (state.sheetsUrl) {
+    await syncToSheets(entry);
+  }
+}
+
+// ─── ADD STOCK (ORDER IN) ─────────────────────────────────────────────
+async function addSku(skuId) {
+  const name = document.getElementById('takerName').value.trim();
+  if (!name) { showToast('⚠️ Please enter your name first', 'error'); return; }
+
+  const qtyInput = document.getElementById(`qty_${skuId}`);
+  const qty = parseInt(qtyInput.value) || 1;
+  if (qty < 1) return;
+
+  const sku = SKUS.find(s => s.id === skuId);
+  state.current[skuId] = (state.current[skuId] || 0) + qty;
+
+  const entry = {
+    id: Date.now(),
+    skuId,
+    skuName: sku.name,
+    qty,
+    name,
+    ts: new Date().toISOString(),
+    type: 'add'
+  };
+  state.history.unshift(entry);
+  saveState();
+
+  // Update display
+  const card = document.getElementById(`card_${skuId}`);
+  const newCurrent = state.current[skuId];
+  const levelClass = newCurrent <= 5 ? 'low' : newCurrent <= 15 ? 'medium' : '';
+  document.getElementById(`remaining_${skuId}`).textContent = newCurrent;
+  document.getElementById(`remaining_${skuId}`).className = `live-value ${levelClass}`;
+  qtyInput.value = 1;
+
+  card.classList.remove('flash-update');
+  void card.offsetWidth;
+  card.classList.add('flash-update');
+
+  showToast(`📦 +${qty}× ${sku.name} added to stock`, 'success');
+  renderHistory();
+
+  if (state.sheetsUrl) await syncToSheets(entry);
+}
+
+
+async function syncToSheets(entry) {
+  setSyncStatus('syncing', 'Syncing...');
+  try {
+    const response = await fetch(state.sheetsUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ data: [{
+        Timestamp: new Date(entry.ts).toLocaleString('en-GB'),
+        Name: entry.name,
+        SKU: entry.skuName,
+        Type: entry.type === 'add' ? 'Order In' : 'Take',
+        Qty: entry.type === 'add' ? `+${entry.qty}` : `-${entry.qty}`,
+        'Live Stock': state.current[entry.skuId]
+      }]})
+    });
+    if (!response.ok) throw new Error('Bad response');
+    setSyncStatus('ok', 'Synced');
+    setTimeout(() => setSyncStatus('ok', 'Ready'), 3000);
+  } catch (e) {
+    setSyncStatus('error', 'Sync failed');
+    showToast('⚠️ Sheet sync failed — log saved locally', 'error');
+  }
+}
+
+function setSyncStatus(status, label) {
+  const dot = document.getElementById('syncDot');
+  const lbl = document.getElementById('syncLabel');
+  dot.className = `sync-dot ${status === 'syncing' ? 'syncing' : status === 'error' ? 'error' : ''}`;
+  lbl.textContent = label;
+}
+
+// ─── HISTORY ─────────────────────────────────────────────────────────
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (!state.history.length) {
+    list.innerHTML = `<div class="empty-state"><div class="big">📋</div>No logs yet.<br>Stock activity will appear here.</div>`;
+    return;
+  }
+  const colors = { peach_330: '#FF8C61', grape_330: '#C78FE0', mango_330: '#FFD050', peach_150: '#FF8C61', peach_30keg: '#7BC8A4', peach_50keg: '#7BC8A4', grape_30keg: '#C78FE0', mango_30keg: '#FFD050' };
+  list.innerHTML = state.history.slice(0, 50).map(e => `
+    <div class="log-entry">
+      <div class="log-dot" style="background:${colors[e.skuId] || '#888'}"></div>
+      <div class="log-info">
+        <div class="log-sku">${e.skuName}</div>
+        <div class="log-meta">By <strong style="color:var(--text)">${e.name}</strong> · ${formatTime(e.ts)}</div>
+      </div>
+      <div class="log-qty ${e.type === 'add' ? 'added' : ''}">
+        ${e.type === 'add' ? '+' : '−'}${e.qty}
+      </div>
+    </div>
+  `).join('');
+}
+
+function formatTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' ' +
+         d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+function clearHistory() {
+  if (!confirm('Clear local history? (Google Sheet is not affected)')) return;
+  state.history = [];
+  saveState();
+  renderHistory();
+  showToast('🗑️ Local history cleared', 'info');
+}
+
+// ─── ADMIN ────────────────────────────────────────────────────────────
+function renderOpeningGrid() {
+  const grid = document.getElementById('openingGrid');
+  grid.innerHTML = SKUS.map(sku => `
+    <div class="opening-row">
+      <div class="opening-sku">${sku.emoji} ${sku.name}</div>
+      <input class="opening-input" type="number" id="open_${sku.id}" 
+             value="${state.current[sku.id] || 0}" min="0" />
+    </div>
+  `).join('');
+}
+
+function saveLiveStock() {
+  SKUS.forEach(sku => {
+    const val = parseInt(document.getElementById(`open_${sku.id}`).value) || 0;
+    state.current[sku.id] = val;
+  });
+  saveState();
+  render();
+  showToast('✅ Live stock updated', 'success');
+  switchTab('stock');
+}
+
+function saveSheetUrl() {
+  const url = document.getElementById('sheetsUrl').value.trim();
+  if (!url.startsWith('https://sheetdb.io/api/')) {
+    showToast('❌ Invalid URL — must be a SheetDB API URL', 'error'); return;
+  }
+  state.sheetsUrl = url;
+  saveState();
+  showToast('✅ SheetDB URL saved', 'success');
+  setSyncStatus('ok', 'Connected');
+}
+
+function resetAll() {
+  if (!confirm('⚠️ This will reset ALL stock and history. Cannot be undone. Continue?')) return;
+  state = { current: {}, history: [], sheetsUrl: state.sheetsUrl };
+  SKUS.forEach(sku => { state.current[sku.id] = 0; });
+  saveState();
+  render();
+  showToast('🗑️ All data reset', 'info');
+}
+
+
+// ─── TABS ─────────────────────────────────────────────────────────────
+function switchTab(id) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById(`tab-${id}`).classList.add('active');
+  event.target.classList.add('active');
+
+  if (id === 'admin') {
+    document.getElementById('sheetsUrl').value = state.sheetsUrl || '';
+    renderOpeningGrid();
+  }
+  if (id === 'history') renderHistory();
+}
+
+// ─── TOAST ────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────
+render_placeholder();
+</script>
+</body>
+</html>
